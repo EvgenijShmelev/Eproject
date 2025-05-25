@@ -5,6 +5,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 
@@ -16,10 +17,42 @@ class GeneralMenu : AppCompatActivity() {
         setContentView(R.layout.activity_general)
 
         setSupportActionBar(findViewById(R.id.toolbar))
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.setHomeAsUpIndicator(android.R.drawable.ic_menu_more)
+        supportActionBar?.apply {
+            setDisplayHomeAsUpEnabled(true)
+            setHomeAsUpIndicator(android.R.drawable.ic_menu_more)
+        }
 
         setupNavigationDrawer()
+        setupButtonListener()
+    }
+
+    private fun setupButtonListener() {
+        findViewById<android.widget.Button>(R.id.btn_open_groups).setOnClickListener {
+            toggleDrawer()
+        }
+    }
+
+    private fun toggleDrawer() {
+        val drawer = findViewById<DrawerLayout>(R.id.drawer_layout)
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START)
+        } else {
+            drawer.openDrawer(GravityCompat.START)
+        }
+    }
+
+    private fun setupNavigationDrawer() {
+        val navView = findViewById<NavigationView>(R.id.nav_view)
+        updateNavigationMenu(navView.menu)
+
+        navView.setNavigationItemSelectedListener { menuItem ->
+            if (menuItem.itemId >= 0 && menuItem.itemId < userGroups.size) {
+                val selectedGroup = userGroups[menuItem.itemId]
+                Toast.makeText(this, "Выбрана: $selectedGroup", Toast.LENGTH_SHORT).show()
+            }
+            findViewById<DrawerLayout>(R.id.drawer_layout).closeDrawer(GravityCompat.START)
+            true
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -34,20 +67,6 @@ class GeneralMenu : AppCompatActivity() {
                 true
             }
             else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    private fun setupNavigationDrawer() {
-        val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout)
-        val navView = findViewById<NavigationView>(R.id.nav_view)
-
-        updateNavigationMenu(navView.menu)
-
-        navView.setNavigationItemSelectedListener { menuItem ->
-            val selectedGroup = userGroups[menuItem.itemId]
-            Toast.makeText(this, "Выбрана: $selectedGroup", Toast.LENGTH_SHORT).show()
-            drawerLayout.closeDrawers()
-            true
         }
     }
 
@@ -66,8 +85,11 @@ class GeneralMenu : AppCompatActivity() {
     }
 
     private fun addNewGroup(groupName: String) {
-        userGroups.add(groupName)
-        updateNavigationMenu(findViewById<NavigationView>(R.id.nav_view).menu)
+        if (groupName.isNotBlank() && !userGroups.contains(groupName)) {
+            userGroups.add(groupName)
+            val navView = findViewById<NavigationView>(R.id.nav_view)
+            updateNavigationMenu(navView.menu)
+        }
     }
 
     private fun updateNavigationMenu(menu: Menu) {

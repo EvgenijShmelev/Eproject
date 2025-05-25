@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    // Удален kotlin-kapt, так как Room больше не используется
 }
 
 android {
@@ -51,7 +50,7 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
 
     // UI
-    implementation(libs.material)
+    implementation(libs.android.material)  // Исправлено с libs.material
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.recyclerview)
     implementation(libs.androidx.cardview)
@@ -59,6 +58,9 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
+
+    // DrawerLayout
+    implementation(libs.androidx.drawerlayout)
 
     // Material 3
     implementation(libs.androidx.material3)
