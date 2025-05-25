@@ -1,0 +1,42 @@
+[versions]
+androidx-core = "1.12.0"
+androidx-appcompat = "1.6.1"
+androidx-material = "1.10.0"
+androidx-constraintlayout = "2.1.4"
+androidx-activity = "1.8.0"
+junit = "4.13.2"
+androidx-junit = "1.1.5"
+espresso-core = "3.5.1"
+androidx-navigation = "2.7.4"
+kotlinx-coroutines = "1.7.3"
+androidx-material3 = "1.2.0"
+
+[libraries]
+# Core
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "androidx-activity" }
+androidx-fragment-ktx = { module = "androidx.fragment:fragment-ktx", version = "1.6.1" }
+
+# UI
+material = { module = "com.google.android.material:material", version.ref = "androidx-material" }
+androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidx-constraintlayout" }
+androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version = "1.3.2" }
+androidx-cardview = { module = "androidx.cardview:cardview", version = "1.0.0" }
+
+# Navigation
+androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "androidx-navigation" }
+androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "androidx-navigation" }
+
+# Testing
+junit = { module = "junit:junit", version.ref = "junit" }
+androidx-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-junit" }
+androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso-core" }
+
+# Material 3
+androidx-material3 = { module = "androidx.compose.material3:material3", version.ref = "androidx-material3" }
+androidx-material3-window-size = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "androidx-material3" }
+
+[plugins]
+android-application = { id = "com.android.application", version = "8.10.0" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version = "1.9.10" }
