@@ -17,7 +17,7 @@
         android:theme="@style/Theme.Eproject"
         tools:targetApi="31">
 
-        <!-- AuthActivity должна быть LAUNCHER, так как это начальный экран авторизации -->
+        <!-- Стартовая активность (авторизация) -->
         <activity
             android:name=".AuthActivity"
             android:exported="true">
@@ -27,14 +27,20 @@
             </intent-filter>
         </activity>
 
-        <!-- MainActivity - экран регистрации -->
+        <!-- Регистрация -->
         <activity
             android:name=".MainActivity"
             android:exported="false" />
 
-        <!-- GeneralMenu - главное меню после авторизации -->
+        <!-- Главное меню -->
         <activity
             android:name=".GeneralMenu"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+
+        <!-- Активность группы (добавлено!) -->
+        <activity
+            android:name=".GroupActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
 

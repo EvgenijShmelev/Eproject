@@ -120,22 +120,32 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
 
     fun createGroup(group: Group): Boolean {
         val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_ID, group.id)
-            put(COLUMN_NAME, group.name)
-            put(COLUMN_CREATOR_ID, group.creatorId)
+        return try {
+            val values = ContentValues().apply {
+                put(COLUMN_ID, group.id)
+                put(COLUMN_NAME, group.name)
+                put(COLUMN_CREATOR_ID, group.creatorId)
+            }
+            db.insert(TABLE_GROUPS, null, values) != -1L
+        } catch (e: Exception) {
+            Log.e(TAG, "Error creating group", e)
+            false
         }
-        return db.insert(TABLE_GROUPS, null, values) != -1L
     }
 
     fun addGroupMember(member: GroupMember): Boolean {
         val db = writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_GROUP_ID, member.groupId)
-            put(COLUMN_USER_ID, member.userId)
-            put(COLUMN_ROLE, member.role.name)
+        return try {
+            val values = ContentValues().apply {
+                put(COLUMN_GROUP_ID, member.groupId)
+                put(COLUMN_USER_ID, member.userId)
+                put(COLUMN_ROLE, member.role.name)
+            }
+            db.insert(TABLE_GROUP_MEMBERS, null, values) != -1L
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding group member", e)
+            false
         }
-        return db.insert(TABLE_GROUP_MEMBERS, null, values) != -1L
     }
 
     fun getGroupsForUser (userId: String): List<Group> {
@@ -183,6 +193,31 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
             put(COLUMN_TIMESTAMP, message.timestamp)
         }
         return db.insert(TABLE_GROUP_MESSAGES, null, values) != -1L
+    }
+    fun getUserRoleInGroup(userId: String, groupId: String): UserRole {
+        val db = readableDatabase
+        var cursor: Cursor? = null
+        return try {
+            cursor = db.query(
+                TABLE_GROUP_MEMBERS,
+                arrayOf(COLUMN_ROLE),
+                "$COLUMN_USER_ID = ? AND $COLUMN_GROUP_ID = ?",
+                arrayOf(userId, groupId),
+                null, null, null
+            )
+
+            if (cursor.moveToFirst()) {
+                val roleStr = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ROLE))
+                UserRole.valueOf(roleStr)
+            } else {
+                UserRole.MEMBER // или другое значение по умолчанию
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting user role", e)
+            UserRole.MEMBER
+        } finally {
+            cursor?.close()
+        }
     }
 
     fun getMessagesForGroup(groupId: String): List<GroupMessage> {

@@ -105,20 +105,30 @@ class GeneralMenu : AppCompatActivity() {
         GroupManageDialog().apply {
             setGroupActionListener(object : GroupManageDialog.GroupActionListener {
                 override fun onGroupAdded(groupName: String) {
-                    val groupId = System.currentTimeMillis().toString()
-                    val group = Group(groupId, groupName, currentUserId)
+                    try {
+                        val groupId = System.currentTimeMillis().toString()
+                        val group = Group(groupId, groupName, currentUserId)
+                        val member = GroupMember(groupId, currentUserId, UserRole.HEAD)
 
-                    if (dbHelper.createGroup(group) &&
-                        dbHelper.addGroupMember(GroupMember(groupId, currentUserId, UserRole.HEAD))) {
-                        updateNavigationMenu(findViewById<NavigationView>(R.id.nav_view).menu)
-                        Toast.makeText(this@GeneralMenu, "Группа создана", Toast.LENGTH_SHORT).show()
+                        if (dbHelper.createGroup(group) && dbHelper.addGroupMember(member)) {
+                            updateNavigationMenu(findViewById<NavigationView>(R.id.nav_view).menu)
+                            showToast("Группа '$groupName' создана")
+                        } else {
+                            showToast("Ошибка при создании группы")
+                        }
+                    } catch (e: Exception) {
+                        showToast("Ошибка: ${e.message}")
                     }
                 }
 
                 override fun onGroupSelected(groupName: String) {
-                    // Not used in this implementation
+                    // Not used
                 }
             })
         }.show(supportFragmentManager, "GroupManageDialog")
+    }
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }

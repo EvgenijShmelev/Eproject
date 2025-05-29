@@ -2,12 +2,11 @@ package com.example.eproject
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.view.View
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -17,6 +16,7 @@ class GroupActivity : AppCompatActivity() {
     private lateinit var groupId: String
     private lateinit var currentUserId: String
     private lateinit var adapter: MessageAdapter
+    private lateinit var userRole: UserRole
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,21 +24,38 @@ class GroupActivity : AppCompatActivity() {
 
         dbHelper = DbHelper(this)
         groupId = intent.getStringExtra("GROUP_ID") ?: run {
+            showToast("Ошибка: не указан ID группы")
             finish()
             return
         }
         currentUserId = intent.getStringExtra("USER_ID") ?: run {
+            showToast("Ошибка: не указан ID пользователя")
             finish()
             return
         }
 
-        setupViews()
-        loadMessages()
+        try {
+            setupViews()
+            loadMessages()
+        } catch (e: Exception) {
+            showToast("Ошибка при загрузке группы: ${e.message}")
+            finish()
+        }
     }
 
     private fun setupViews() {
+        // Получаем роль пользователя в группе
+        userRole = getUserRoleInGroup()
+
         val group = dbHelper.getGroupsForUser(currentUserId).firstOrNull { it.id == groupId }
-        findViewById<TextView>(R.id.group_name).text = group?.name ?: "Группа"
+
+        if (group == null) {
+            showToast("Группа не найдена")
+            finish()
+            return
+        }
+
+        findViewById<TextView>(R.id.group_name).text = group.name
 
         val recyclerView: RecyclerView = findViewById(R.id.messages_recycler)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -48,61 +65,55 @@ class GroupActivity : AppCompatActivity() {
         val sendButton: Button = findViewById(R.id.send_button)
         val messageInput: EditText = findViewById(R.id.message_input)
 
-        sendButton.setOnClickListener {
-            val messageText = messageInput.text.toString()
-            if (messageText.isNotEmpty()) {
-                val message = GroupMessage(
-                    id = System.currentTimeMillis().toString(),
-                    groupId = groupId,
-                    senderId = currentUserId,
-                    text = messageText,
-                    timestamp = System.currentTimeMillis() // Добавлен timestamp
-                )
+        // Если пользователь не участник группы, скрываем поле ввода
+        if (userRole == UserRole.MEMBER || userRole == UserRole.HEAD) {
+            sendButton.setOnClickListener {
+                val messageText = messageInput.text.toString()
+                if (messageText.isNotEmpty()) {
+                    try {
+                        val message = GroupMessage(
+                            id = System.currentTimeMillis().toString(),
+                            groupId = groupId,
+                            senderId = currentUserId,
+                            text = messageText,
+                            timestamp = System.currentTimeMillis()
+                        )
 
-                if (dbHelper.addMessage(message)) {
-                    messageInput.text.clear()
-                    loadMessages()
+                        if (dbHelper.addMessage(message)) {
+                            messageInput.text.clear()
+                            loadMessages()
+                        } else {
+                            showToast("Ошибка при отправке сообщения")
+                        }
+                    } catch (e: Exception) {
+                        showToast("Ошибка: ${e.message}")
+                    }
                 }
             }
+        } else {
+            messageInput.visibility = View.GONE
+            sendButton.visibility = View.GONE
         }
+    }
+
+    private fun getUserRoleInGroup(): UserRole {
+        // Здесь должна быть логика получения роли пользователя
+        // Пока просто возвращаем HEAD для примера
+        return UserRole.HEAD
     }
 
     private fun loadMessages() {
-        val messages = dbHelper.getMessagesForGroup(groupId)
-        adapter.updateMessages(messages)
-        val recyclerView: RecyclerView = findViewById(R.id.messages_recycler)
-        recyclerView.scrollToPosition(adapter.itemCount - 1)
-    }
-}
-
-class MessageAdapter(private val messages: MutableList<GroupMessage>) :
-    RecyclerView.Adapter<MessageAdapter.MessageViewHolder>() {
-
-    class MessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val senderText: TextView = itemView.findViewById(R.id.sender_text)
-        private val messageText: TextView = itemView.findViewById(R.id.message_text)
-
-        fun bind(message: GroupMessage) {
-            senderText.text = message.senderId
-            messageText.text = message.text
+        try {
+            val messages = dbHelper.getMessagesForGroup(groupId)
+            adapter.updateMessages(messages)
+            val recyclerView: RecyclerView = findViewById(R.id.messages_recycler)
+            recyclerView.scrollToPosition(adapter.itemCount - 1)
+        } catch (e: Exception) {
+            showToast("Ошибка при загрузке сообщений")
         }
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
-        val inflater = LayoutInflater.from(parent.context)
-        val view = inflater.inflate(R.layout.item_message, parent, false)
-        return MessageViewHolder(view)
-    }
-
-    override fun onBindViewHolder(holder: MessageViewHolder, position: Int) {
-        holder.bind(messages[position])
-    }
-
-    override fun getItemCount() = messages.size
-
-    fun updateMessages(newMessages: List<GroupMessage>) {
-        messages.clear()
-        messages.addAll(newMessages)
-        notifyDataSetChanged()
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 }
