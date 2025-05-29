@@ -1,8 +1,10 @@
 package com.example.eproject
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
@@ -10,11 +12,18 @@ import androidx.drawerlayout.widget.DrawerLayout
 import com.google.android.material.navigation.NavigationView
 
 class GeneralMenu : AppCompatActivity() {
-    private val userGroups = mutableListOf("Моя группа 1", "Рабочая группа", "Друзья")
+    private lateinit var dbHelper: DbHelper
+    private lateinit var currentUserId: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_general)
+
+        dbHelper = DbHelper(this)
+        currentUserId = intent.getStringExtra("USER_LOGIN") ?: run {
+            finish()
+            return
+        }
 
         setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.apply {
@@ -27,7 +36,8 @@ class GeneralMenu : AppCompatActivity() {
     }
 
     private fun setupButtonListener() {
-        findViewById<android.widget.Button>(R.id.btn_open_groups).setOnClickListener {
+        val btnOpenGroups: Button = findViewById(R.id.btn_open_groups)
+        btnOpenGroups.setOnClickListener {
             toggleDrawer()
         }
     }
@@ -46,12 +56,33 @@ class GeneralMenu : AppCompatActivity() {
         updateNavigationMenu(navView.menu)
 
         navView.setNavigationItemSelectedListener { menuItem ->
-            if (menuItem.itemId >= 0 && menuItem.itemId < userGroups.size) {
-                val selectedGroup = userGroups[menuItem.itemId]
-                Toast.makeText(this, "Выбрана: $selectedGroup", Toast.LENGTH_SHORT).show()
+            try {
+                if (menuItem.itemId >= 0) {
+                    val groups = dbHelper.getGroupsForUser(currentUserId)
+                    if (menuItem.itemId < groups.size) {
+                        val selectedGroup = groups[menuItem.itemId]
+                        startActivity(Intent(this, GroupActivity::class.java).apply {
+                            putExtra("GROUP_ID", selectedGroup.id)
+                            putExtra("USER_ID", currentUserId)
+                        })
+                    } else {
+                        Toast.makeText(this, "Группа не найдена", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
             }
             findViewById<DrawerLayout>(R.id.drawer_layout).closeDrawer(GravityCompat.START)
             true
+        }
+    }
+
+    private fun updateNavigationMenu(menu: Menu) {
+        menu.clear()
+        dbHelper.getGroupsForUser(currentUserId).forEachIndexed { index, group ->
+            menu.add(Menu.NONE, index, Menu.NONE, group.name).apply {
+                icon = getDrawable(android.R.drawable.ic_menu_info_details)
+            }
         }
     }
 
@@ -74,30 +105,20 @@ class GeneralMenu : AppCompatActivity() {
         GroupManageDialog().apply {
             setGroupActionListener(object : GroupManageDialog.GroupActionListener {
                 override fun onGroupAdded(groupName: String) {
-                    addNewGroup(groupName)
-                    Toast.makeText(this@GeneralMenu, "Добавлено: $groupName", Toast.LENGTH_SHORT).show()
+                    val groupId = System.currentTimeMillis().toString()
+                    val group = Group(groupId, groupName, currentUserId)
+
+                    if (dbHelper.createGroup(group) &&
+                        dbHelper.addGroupMember(GroupMember(groupId, currentUserId, UserRole.HEAD))) {
+                        updateNavigationMenu(findViewById<NavigationView>(R.id.nav_view).menu)
+                        Toast.makeText(this@GeneralMenu, "Группа создана", Toast.LENGTH_SHORT).show()
+                    }
                 }
+
                 override fun onGroupSelected(groupName: String) {
-                    Toast.makeText(this@GeneralMenu, "Выбрано: $groupName", Toast.LENGTH_SHORT).show()
+                    // Not used in this implementation
                 }
             })
         }.show(supportFragmentManager, "GroupManageDialog")
-    }
-
-    private fun addNewGroup(groupName: String) {
-        if (groupName.isNotBlank() && !userGroups.contains(groupName)) {
-            userGroups.add(groupName)
-            val navView = findViewById<NavigationView>(R.id.nav_view)
-            updateNavigationMenu(navView.menu)
-        }
-    }
-
-    private fun updateNavigationMenu(menu: Menu) {
-        menu.clear()
-        userGroups.forEachIndexed { index, groupName ->
-            menu.add(Menu.NONE, index, Menu.NONE, groupName).apply {
-                icon = getDrawable(android.R.drawable.ic_menu_info_details)
-            }
-        }
     }
 }

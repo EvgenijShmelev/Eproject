@@ -86,6 +86,8 @@ class GroupManageDialog : DialogFragment() {
         }
     }
 
+
+
     fun setGroupActionListener(listener: GroupActionListener) {
         this.listener = listener
     }
