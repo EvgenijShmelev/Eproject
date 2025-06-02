@@ -120,6 +120,19 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
         }
     }
 
+    fun isUserInGroup(userId: String, groupId: String): Boolean {
+        val db = this.readableDatabase
+        val cursor = db.query(
+            "group_members",
+            arrayOf("user_id"),
+            "group_id = ? AND user_id = ?",
+            arrayOf(groupId, userId),
+            null, null, null
+        )
+        val result = cursor.count > 0
+        cursor.close()
+        return result
+    }
 
     private fun recreateDatabase(db: SQLiteDatabase) {
         try {
@@ -158,6 +171,24 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
                     null
                 }
             }
+    }
+
+    fun searchGroupExact(name: String): Group? {
+        return readableDatabase.rawQuery(
+            "SELECT * FROM $TABLE_GROUPS WHERE $COLUMN_NAME = ?",
+            arrayOf(name)
+        ).use { cursor ->
+            if (cursor.moveToFirst()) {
+                Group(
+                    id = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ID)),
+                    name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME)),
+                    creatorId = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CREATOR_ID)),
+                    description = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DESCRIPTION)) ?: ""
+                )
+            } else {
+                null
+            }
+        }
     }
 
     fun saveGroupDescription(groupId: String, description: String): Boolean {
@@ -389,6 +420,21 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
             }
         }
     }
+    fun removeGroupMember(groupId: String, userId: String): Boolean {
+        return try {
+            val db = this.writableDatabase
+            val result = db.delete(
+                "group_members",
+                "group_id = ? AND user_id = ?",
+                arrayOf(groupId, userId)
+            ) > 0
+            db.close()
+            result
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun addMessage(message: GroupMessage): Boolean {
         val db = writableDatabase
         db.beginTransaction()

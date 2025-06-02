@@ -1,5 +1,7 @@
 package com.example.eproject
 
+import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.view.LayoutInflater
 import androidx.appcompat.app.AlertDialog
 import android.text.Editable
@@ -27,6 +29,11 @@ class GeneralMenu : AppCompatActivity() {
     private lateinit var groupDescriptionInput: EditText
     private lateinit var btnOpenChat: Button
     private var selectedGroup: Group? = null
+    private lateinit var searchResultContainer: LinearLayout
+    private lateinit var searchResultText: TextView
+    private lateinit var btnAddSearchedGroup: Button
+    private var searchedGroup: Group? = null
+    private lateinit var btnLeaveSearchedGroup: ImageButton
 
 
 
@@ -46,6 +53,11 @@ class GeneralMenu : AppCompatActivity() {
         btnAddGroup.setOnClickListener {
             showGroupCreationDialog()
         }
+        btnAddSearchedGroup = findViewById(R.id.btn_add_searched_group)
+        btnLeaveSearchedGroup = findViewById(R.id.btn_leave_searched_group)
+        btnAddSearchedGroup = findViewById(R.id.btn_add_searched_group)
+        searchResultContainer = findViewById(R.id.search_result_container)
+        searchResultText = findViewById(R.id.search_result_text)
 
         Log.d("GeneralMenu", "Авторизован пользователь: $currentUserId")
 
@@ -62,6 +74,10 @@ class GeneralMenu : AppCompatActivity() {
         setupNavigationDrawer()
         setupChatButton()
         setupButtonListener()
+        searchResultContainer = findViewById(R.id.search_result_container)
+        searchResultText = findViewById(R.id.search_result_text)
+        btnAddSearchedGroup = findViewById(R.id.btn_add_searched_group)
+        btnLeaveSearchedGroup.setBackgroundResource(R.drawable.ic_exit_group)
     }
 
     private fun setupChatButton() {
@@ -90,20 +106,6 @@ class GeneralMenu : AppCompatActivity() {
         })
     }
 
-    private fun setupSearchFunctionality() {
-        val searchButton: Button = findViewById(R.id.btn_search_groups) // Добавьте эту кнопку в layout
-        val searchInput: EditText = findViewById(R.id.search_group_input) // Добавьте это поле в layout
-
-        searchButton.setOnClickListener {
-            val query = searchInput.text.toString().trim()
-            if (query.isNotEmpty()) {
-                val filteredGroups = dbHelper.searchGroups(currentUserId, query)
-                updateNavigationMenuWithSearchResults(filteredGroups)
-            } else {
-                updateNavigationMenu(findViewById<NavigationView>(R.id.nav_view).menu)
-            }
-        }
-    }
 
     private fun updateNavigationMenuWithSearchResults(groups: List<Group>) {
         val navView = findViewById<NavigationView>(R.id.nav_view)
@@ -350,4 +352,105 @@ class GeneralMenu : AppCompatActivity() {
         dbHelper.close()
         super.onDestroy()
     }
+    private fun setupSearchFunctionality() {
+        val searchInput = findViewById<EditText>(R.id.search_group_input)
+        val searchButton = findViewById<Button>(R.id.btn_search_groups)
+
+        searchButton.setOnClickListener {
+            val query = searchInput.text.toString().trim()
+            if (query.isNotEmpty()) {
+                searchGroupByName(query)
+            } else {
+                Toast.makeText(this, "Введите название группы", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        btnLeaveSearchedGroup.setOnClickListener {
+            Log.d("DEBUG", "Кнопка выхода нажата")
+            searchedGroup?.let { group ->
+                Log.d("DEBUG", "Обработка выхода из группы: ${group.name}")
+                leaveGroup(group)
+            } ?: run {
+                Log.d("DEBUG", "Группа не выбрана при нажатии")
+                Toast.makeText(this, "Группа не выбрана", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Используем searchedGroup вместо group
+        val isMember = searchedGroup?.let { dbHelper.isUserInGroup(currentUserId, it.id) } ?: false
+        Log.d("DEBUG", "Пользователь в группе: $isMember")
+
+        btnAddSearchedGroup.visibility = if (isMember) View.GONE else View.VISIBLE
+        btnLeaveSearchedGroup.visibility = if (isMember) View.VISIBLE else View.GONE
+        Log.d("DEBUG", "Видимость кнопки выхода: ${btnLeaveSearchedGroup.visibility}")
+
+        btnAddSearchedGroup.setOnClickListener {
+            searchedGroup?.let { group ->
+                addUserToGroup(group)
+            } ?: run {
+                Toast.makeText(this, "Группа не выбрана", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun leaveGroup(group: Group) {
+        Log.d("DEBUG", "Попытка выхода из группы ${group.id}")
+        try {
+            val success = dbHelper.removeGroupMember(group.id, currentUserId)
+            Log.d("DEBUG", "Результат выхода: $success")
+
+            if (success) {
+                updateNavigationMenu(findViewById<NavigationView>(R.id.nav_view).menu)
+                searchResultContainer.visibility = View.GONE
+                Toast.makeText(this, "Вы вышли из группы '${group.name}'", Toast.LENGTH_SHORT).show()
+
+                if (selectedGroup?.id == group.id) {
+                    selectedGroup = null
+                    updateSelectedGroupUI()
+                }
+            } else {
+                Toast.makeText(this, "Ошибка при выходе из группы", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("DEBUG", "Ошибка при выходе из группы", e)
+            Toast.makeText(this, "Ошибка: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun searchGroupByName(name: String) {
+        val group = dbHelper.searchGroupExact(name)
+        if (group != null) {
+            searchedGroup = group
+            searchResultText.text = group.name
+            searchResultContainer.visibility = View.VISIBLE
+
+            val isMember = dbHelper.isUserInGroup(currentUserId, group.id)
+
+            btnAddSearchedGroup.visibility = if (isMember) View.GONE else View.VISIBLE
+            btnLeaveSearchedGroup.visibility = if (isMember) View.VISIBLE else View.GONE
+
+            searchResultContainer.visibility = View.VISIBLE
+
+        } else {
+            searchResultContainer.visibility = View.GONE
+            Toast.makeText(this, "Группа '$name' не найдена", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun addUserToGroup(group: Group) {
+        val member = GroupMember(
+            groupId = group.id,
+            userId = currentUserId,
+            role = UserRole.MEMBER
+        )
+
+        if (dbHelper.addGroupMember(member)) {
+            updateNavigationMenu(findViewById<NavigationView>(R.id.nav_view).menu)
+            searchResultContainer.visibility = View.GONE
+            Toast.makeText(this, "Вы добавлены в группу '${group.name}'", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Ошибка добавления в группу", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 }

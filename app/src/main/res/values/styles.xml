@@ -12,6 +12,13 @@
         <item name="android:background">@drawable/rounded_bg</item>
     </style>
 
+    <style name="SearchResultText">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:background">@color/purple_500</item>
+        <item name="android:padding">8dp</item>
+    </style>
+
     <style name="ChatButtonStyle" parent="Widget.AppCompat.Button.Colored">
         <item name="android:backgroundTint">#FFBB86FC</item> <!-- Светло-фиолетовый -->
         <item name="android:textColor">#FFFFFF</item> <!-- Белый -->
