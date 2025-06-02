@@ -97,9 +97,13 @@ class GroupActivity : AppCompatActivity() {
     }
 
     private fun getUserRoleInGroup(): UserRole {
-        // Здесь должна быть логика получения роли пользователя
-        // Пока просто возвращаем HEAD для примера
-        return UserRole.HEAD
+        return try {
+            val role = dbHelper.getUserRoleInGroup(currentUserId, groupId)
+            role ?: UserRole.MEMBER // По умолчанию считаем обычным участником
+        } catch (e: Exception) {
+            showToast("Ошибка при получении роли пользователя")
+            UserRole.MEMBER
+        }
     }
 
     private fun loadMessages() {
@@ -116,4 +120,5 @@ class GroupActivity : AppCompatActivity() {
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
+
 }

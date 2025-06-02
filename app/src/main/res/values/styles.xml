@@ -1,0 +1,19 @@
+<resources>
+    <!-- Базовые стили (уже должны быть) -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        ...
+    </style>
+
+    <!-- Добавьте эти новые стили -->
+    <style name="GroupTextStyle">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">#FF6200EE</item> <!-- Фиолетовый -->
+        <item name="android:padding">12dp</item>
+        <item name="android:background">@drawable/rounded_bg</item>
+    </style>
+
+    <style name="ChatButtonStyle" parent="Widget.AppCompat.Button.Colored">
+        <item name="android:backgroundTint">#FFBB86FC</item> <!-- Светло-фиолетовый -->
+        <item name="android:textColor">#FFFFFF</item> <!-- Белый -->
+    </style>
+</resources>
