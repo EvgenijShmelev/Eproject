@@ -2,7 +2,8 @@ package com.example.eproject
 
 enum class UserRole {
     HEAD,
-    MEMBER
+    MEMBER,
+    GUEST
 }
 
 data class GroupMember(

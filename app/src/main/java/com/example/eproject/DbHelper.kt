@@ -15,7 +15,7 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
     companion object {
         private const val TAG = "DbHelper"
         private const val DATABASE_NAME = "app_db.db"
-        private const val DATABASE_VERSION = 4
+        private const val DATABASE_VERSION = 5
 
         // Таблицы и колонки
         private const val TABLE_USERS = "users"
@@ -36,6 +36,13 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
         private const val COLUMN_TEXT = "text"
         private const val COLUMN_TIMESTAMP = "timestamp"
         private const val COLUMN_DESCRIPTION = "description"
+
+        private const val TABLE_FILES = "group_files"
+        private const val COLUMN_FILE_ID = "file_id"
+        private const val COLUMN_FILE_NAME = "file_name"
+        private const val COLUMN_FILE_PATH = "file_path"
+        private const val COLUMN_UPLOADER_ID = "uploader_id"
+        private const val COLUMN_UPLOAD_TIME = "upload_time"
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -50,6 +57,19 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
                 $COLUMN_PASSWORD TEXT NOT NULL
             )"""
             )
+
+                db.execSQL("""
+        CREATE TABLE $TABLE_FILES (
+            $COLUMN_FILE_ID TEXT PRIMARY KEY,
+            $COLUMN_GROUP_ID TEXT NOT NULL,
+            $COLUMN_FILE_NAME TEXT NOT NULL,
+            $COLUMN_FILE_PATH TEXT NOT NULL,
+            $COLUMN_UPLOADER_ID TEXT NOT NULL,
+            $COLUMN_UPLOAD_TIME INTEGER NOT NULL,
+            FOREIGN KEY ($COLUMN_GROUP_ID) REFERENCES $TABLE_GROUPS($COLUMN_ID)
+        )
+    """)
+
 
             db.execSQL("""
             CREATE TABLE $TABLE_GROUPS (
@@ -113,14 +133,26 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        if (oldVersion < 4) {
-            // Добавляем столбец description если его нет
-            db.execSQL("ALTER TABLE $TABLE_GROUPS ADD COLUMN $COLUMN_DESCRIPTION TEXT DEFAULT ''")
-            Log.i("DB_UPGRADE", "Добавлен столбец description в таблицу groups")
+        if (oldVersion < 5) { // Номер новой версии
+            db.execSQL("DROP TABLE IF EXISTS $TABLE_FILES")
+            // Создаем таблицу заново
+            db.execSQL(
+                """
+            CREATE TABLE $TABLE_FILES (
+                $COLUMN_FILE_ID TEXT PRIMARY KEY,
+                $COLUMN_GROUP_ID TEXT NOT NULL,
+                $COLUMN_FILE_NAME TEXT NOT NULL,
+                $COLUMN_FILE_PATH TEXT NOT NULL,
+                $COLUMN_UPLOADER_ID TEXT NOT NULL,
+                $COLUMN_UPLOAD_TIME INTEGER NOT NULL,
+                FOREIGN KEY ($COLUMN_GROUP_ID) REFERENCES $TABLE_GROUPS($COLUMN_ID)
+            )
+        """
+            )
         }
     }
-
     fun isUserInGroup(userId: String, groupId: String): Boolean {
+        Log.d("DB_DEBUG", "Проверка членства: user=$userId, group=$groupId")
         val db = this.readableDatabase
         val cursor = db.query(
             "group_members",
@@ -435,6 +467,100 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
         }
     }
 
+    fun addFile(file: GroupFile): Boolean {
+        val db = writableDatabase
+        db.beginTransaction()
+        return try {
+            val values = ContentValues().apply {
+                put(COLUMN_FILE_ID, file.id)
+                put(COLUMN_GROUP_ID, file.groupId)
+                put(COLUMN_FILE_NAME, file.fileName)
+                put(COLUMN_FILE_PATH, file.filePath)
+                put(COLUMN_UPLOADER_ID, file.uploaderId)
+                put(COLUMN_UPLOAD_TIME, file.uploadTime)
+            }
+
+            val result = db.insert(TABLE_FILES, null, values) != -1L
+            db.setTransactionSuccessful()
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding file", e)
+            false
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun getGroupFiles(groupId: String): List<GroupFile> {
+        return readableDatabase.rawQuery(
+            "SELECT * FROM $TABLE_FILES WHERE $COLUMN_GROUP_ID = ? ORDER BY $COLUMN_UPLOAD_TIME DESC",
+            arrayOf(groupId)
+        ).use { cursor ->
+            val files = mutableListOf<GroupFile>()
+            while (cursor.moveToNext()) {
+                files.add(
+                    GroupFile(
+                        id = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FILE_ID)),
+                        groupId = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_GROUP_ID)),
+                        fileName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FILE_NAME)),
+                        filePath = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_FILE_PATH)),
+                        uploaderId = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_UPLOADER_ID)),
+                        uploadTime = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_UPLOAD_TIME))
+                    )
+                )
+            }
+            files
+        }
+    }
+
+    fun deleteFile(fileId: String): Boolean {
+        val db = writableDatabase
+        db.beginTransaction()
+        return try {
+            val result = db.delete(
+                TABLE_FILES,
+                "$COLUMN_FILE_ID = ?",
+                arrayOf(fileId)
+            ) > 0
+            db.setTransactionSuccessful()
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting file", e)
+            false
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun debugDatabase() {
+        Log.d("DB_DEBUG", "=== Проверка структуры БД ===")
+
+        // Проверяем существование таблиц
+        val tablesCursor = readableDatabase.rawQuery(
+            "SELECT name FROM sqlite_master WHERE type='table'", null
+        )
+
+        Log.d("DB_DEBUG", "Таблицы в БД:")
+        while (tablesCursor.moveToNext()) {
+            Log.d("DB_DEBUG", tablesCursor.getString(0))
+        }
+        tablesCursor.close()
+
+        // Проверяем структуру таблицы групп
+        try {
+            val groupsCursor = readableDatabase.rawQuery(
+                "SELECT * FROM $TABLE_GROUPS LIMIT 0", null
+            )
+            Log.d("DB_DEBUG", "Колонки в $TABLE_GROUPS:")
+            groupsCursor.columnNames.forEach {
+                Log.d("DB_DEBUG", it)
+            }
+            groupsCursor.close()
+        } catch (e: Exception) {
+            Log.e("DB_ERROR", "Ошибка при проверке таблицы групп", e)
+        }
+    }
+
     fun addMessage(message: GroupMessage): Boolean {
         val db = writableDatabase
         db.beginTransaction()
@@ -455,33 +581,6 @@ class DbHelper(context: Context) : SQLiteOpenHelper(
             false
         } finally {
             db.endTransaction()
-        }
-
-        fun debugDatabase() {
-            Log.d("DB_DEBUG", "=== Проверка структуры БД ===")
-
-            // Проверяем существование таблиц
-            val tablesCursor = readableDatabase.rawQuery(
-                "SELECT name FROM sqlite_master WHERE type='table'", null)
-
-            Log.d("DB_DEBUG", "Таблицы в БД:")
-            while (tablesCursor.moveToNext()) {
-                Log.d("DB_DEBUG", tablesCursor.getString(0))
-            }
-            tablesCursor.close()
-
-            // Проверяем структуру таблицы групп
-            try {
-                val groupsCursor = readableDatabase.rawQuery(
-                    "SELECT * FROM $TABLE_GROUPS LIMIT 0", null)
-                Log.d("DB_DEBUG", "Колонки в $TABLE_GROUPS:")
-                groupsCursor.columnNames.forEach {
-                    Log.d("DB_DEBUG", it)
-                }
-                groupsCursor.close()
-            } catch (e: Exception) {
-                Log.e("DB_ERROR", "Ошибка при проверке таблицы групп", e)
-            }
         }
     }
 }

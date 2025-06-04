@@ -34,6 +34,7 @@ class GeneralMenu : AppCompatActivity() {
     private lateinit var btnAddSearchedGroup: Button
     private var searchedGroup: Group? = null
     private lateinit var btnLeaveSearchedGroup: ImageButton
+    private lateinit var btnGroupFiles: Button
 
 
 
@@ -49,9 +50,26 @@ class GeneralMenu : AppCompatActivity() {
             return
         }
 
+        // Инициализация кнопки настроек (добавлено)
+        val btnSettings = findViewById<ImageButton>(R.id.btn_settings)
+        btnSettings.setOnClickListener {
+            // Обработка нажатия на кнопку настроек
+            showSettingsDialog()
+        }
+
         val btnAddGroup = findViewById<Button>(R.id.btn_add_group)
         btnAddGroup.setOnClickListener {
             showGroupCreationDialog()
+        }
+
+        btnGroupFiles = findViewById(R.id.btn_group_files)
+        btnGroupFiles.setOnClickListener {
+            selectedGroup?.let { group ->
+                startActivity(Intent(this, GroupFilesActivity::class.java).apply {
+                    putExtra("GROUP_ID", group.id)
+                    putExtra("USER_ID", currentUserId)
+                })
+            } ?: showToast("Сначала выберите группу")
         }
         btnAddSearchedGroup = findViewById(R.id.btn_add_searched_group)
         btnLeaveSearchedGroup = findViewById(R.id.btn_leave_searched_group)
@@ -78,10 +96,29 @@ class GeneralMenu : AppCompatActivity() {
         searchResultText = findViewById(R.id.search_result_text)
         btnAddSearchedGroup = findViewById(R.id.btn_add_searched_group)
         btnLeaveSearchedGroup.setBackgroundResource(R.drawable.ic_exit_group)
+
+        btnLeaveSearchedGroup.setOnClickListener {
+            selectedGroup?.let { group ->
+                leaveGroup(group)
+                selectedGroup = null // Сбрасываем выбранную группу
+                updateSelectedGroupUI() // Обновляем UI
+            }
+        }
+    }
+
+    // Добавьте эту функцию для обработки настроек
+    private fun showSettingsDialog() {
+        // Реализация диалога настроек
+        AlertDialog.Builder(this)
+            .setTitle("Настройки")
+            .setMessage("Здесь будут настройки приложения")
+            .setPositiveButton("OK") { dialog, _ -> dialog.dismiss() }
+            .create()
+            .show()
     }
 
     private fun setupChatButton() {
-        btnOpenChat.setOnClickListener {
+        findViewById<Button>(R.id.btn_open_chat).setOnClickListener {
             selectedGroup?.let { group ->
                 startActivity(Intent(this, GroupActivity::class.java).apply {
                     putExtra("GROUP_ID", group.id)
@@ -132,7 +169,7 @@ class GeneralMenu : AppCompatActivity() {
                     if (menuItem.itemId < groups.size) {
                         val groupId = groups[menuItem.itemId].id
                         selectedGroup = dbHelper.getGroupById(currentUserId, groupId)
-                        updateSelectedGroupUI()
+                        updateSelectedGroupUI() // Это обновит видимость кнопки
                     }
                 }
             } catch (e: Exception) {
@@ -146,7 +183,11 @@ class GeneralMenu : AppCompatActivity() {
 
 
     private fun updateSelectedGroupUI() {
+        val selectedGroupContainer = findViewById<LinearLayout>(R.id.selected_group_container)
+        Log.d("UI_DEBUG", "Обновление UI. Группа: ${selectedGroup?.name ?: "null"}, isMember: ${selectedGroup?.let { dbHelper.isUserInGroup(currentUserId, it.id) } ?: false}")
+
         selectedGroup?.let { group ->
+            selectedGroupContainer.visibility = View.VISIBLE // Показываем контейнер
             selectedGroupText.text = "Группа: ${group.name}"
             groupDescriptionInput.setText(group.description)
 
@@ -158,13 +199,20 @@ class GeneralMenu : AppCompatActivity() {
                 null
             }
 
-            selectedGroupText.visibility = View.VISIBLE
-            groupDescriptionInput.visibility = View.VISIBLE
-            btnOpenChat.visibility = View.VISIBLE
+            selectedGroup?.let { group ->
+                // Показываем кнопки только для участников группы
+                val isMember = dbHelper.isUserInGroup(currentUserId, group.id)
+                btnGroupFiles.visibility = if (isMember) View.VISIBLE else View.GONE
+                btnOpenChat.visibility = if (isMember) View.VISIBLE else View.GONE
+            } ?: run {
+                btnGroupFiles.visibility = View.GONE
+                btnOpenChat.visibility = View.GONE
+            }
+            btnLeaveSearchedGroup.visibility = if (dbHelper.isUserInGroup(currentUserId, group.id)) View.VISIBLE else View.GONE
+
         } ?: run {
-            selectedGroupText.visibility = View.GONE
-            groupDescriptionInput.visibility = View.GONE
-            btnOpenChat.visibility = View.GONE
+            selectedGroupContainer.visibility = View.GONE // Скрываем если группа не выбрана
+            btnLeaveSearchedGroup.visibility = View.GONE
         }
     }
 
@@ -365,25 +413,6 @@ class GeneralMenu : AppCompatActivity() {
             }
         }
 
-        btnLeaveSearchedGroup.setOnClickListener {
-            Log.d("DEBUG", "Кнопка выхода нажата")
-            searchedGroup?.let { group ->
-                Log.d("DEBUG", "Обработка выхода из группы: ${group.name}")
-                leaveGroup(group)
-            } ?: run {
-                Log.d("DEBUG", "Группа не выбрана при нажатии")
-                Toast.makeText(this, "Группа не выбрана", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        // Используем searchedGroup вместо group
-        val isMember = searchedGroup?.let { dbHelper.isUserInGroup(currentUserId, it.id) } ?: false
-        Log.d("DEBUG", "Пользователь в группе: $isMember")
-
-        btnAddSearchedGroup.visibility = if (isMember) View.GONE else View.VISIBLE
-        btnLeaveSearchedGroup.visibility = if (isMember) View.VISIBLE else View.GONE
-        Log.d("DEBUG", "Видимость кнопки выхода: ${btnLeaveSearchedGroup.visibility}")
-
         btnAddSearchedGroup.setOnClickListener {
             searchedGroup?.let { group ->
                 addUserToGroup(group)
@@ -425,11 +454,10 @@ class GeneralMenu : AppCompatActivity() {
             searchResultContainer.visibility = View.VISIBLE
 
             val isMember = dbHelper.isUserInGroup(currentUserId, group.id)
+            Log.d("SEARCH_DEBUG", "User is member: $isMember")
 
             btnAddSearchedGroup.visibility = if (isMember) View.GONE else View.VISIBLE
             btnLeaveSearchedGroup.visibility = if (isMember) View.VISIBLE else View.GONE
-
-            searchResultContainer.visibility = View.VISIBLE
 
         } else {
             searchResultContainer.visibility = View.GONE
@@ -452,5 +480,4 @@ class GeneralMenu : AppCompatActivity() {
             Toast.makeText(this, "Ошибка добавления в группу", Toast.LENGTH_SHORT).show()
         }
     }
-
 }

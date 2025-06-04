@@ -15,6 +15,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <!-- Верхняя панель с поиском и настройками -->
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -26,57 +27,50 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:paddingHorizontal="8dp">
 
-                <ImageButton
-                    android:id="@+id/btn_leave_searched_group"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/ic_exit_group"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Выйти из группы"
-                    android:visibility="gone"
-                    android:layout_marginStart="8dp"
-                    android:scaleType="centerInside"
-                    android:padding="8dp"/>
-
-                <Button
-                    android:id="@+id/btn_menu"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@android:drawable/ic_menu_more" />
-
+                <!-- Поле для ввода названия группы -->
                 <EditText
                     android:id="@+id/search_group_input"
                     android:layout_width="0dp"
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:hint="Поиск групп"
-                    android:singleLine="true"/>
+                    android:hint="Название группы"
+                    android:singleLine="true"
+                    android:background="@drawable/rounded_edittext"
+                    android:padding="8dp"/>
 
+                <!-- Кнопка поиска -->
                 <Button
                     android:id="@+id/btn_search_groups"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Поиск"/>
+                    android:layout_height="36dp"
+                    android:text="Поиск"
+                    android:layout_marginLeft="8dp"
+                    android:background="@drawable/rounded_button"
+                    android:textColor="@android:color/white"/>
 
-                <!-- Добавьте эту кнопку -->
-                <Button
-                    android:id="@+id/btn_add_group"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Добавить"
-                    android:layout_marginLeft="8dp"/>
+                <!-- Кнопка настроек -->
+                <ImageButton
+                    android:id="@+id/btn_settings"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginLeft="8dp"
+                    android:background="@drawable/rounded_button"
+                    android:src="@android:drawable/ic_menu_preferences"
+                    android:contentDescription="Настройки"/>
             </LinearLayout>
         </androidx.appcompat.widget.Toolbar>
 
-        <!-- Добавленный блок для группы и кнопки чата -->
+        <!-- Блок с информацией о выбранной группе -->
         <LinearLayout
+            android:id="@+id/selected_group_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/selected_group_text"
@@ -84,8 +78,7 @@
                 android:layout_height="wrap_content"
                 android:text="Группа не выбрана"
                 android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:visibility="gone"/>
+                android:textSize="18sp"/>
 
             <EditText
                 android:id="@+id/group_description_input"
@@ -97,7 +90,22 @@
                 android:inputType="textMultiLine"
                 android:minLines="3"
                 android:textColor="@android:color/white"
-                android:textColorHint="#AAAAAA"
+                android:textColorHint="#AAAAAA"/>
+
+            <Button
+                android:id="@+id/btn_files"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Файлы"
+                android:layout_margin="8dp"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btn_group_files"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Файлы"
+                android:layout_marginEnd="8dp"
                 android:visibility="gone"/>
 
             <Button
@@ -107,50 +115,82 @@
                 android:layout_marginTop="8dp"
                 android:text="Открыть чат"
                 android:textColor="@android:color/white"
-                android:backgroundTint="@color/purple_500"
-                android:visibility="gone"/>
+                android:backgroundTint="@color/purple_500"/>
+        </LinearLayout>
+
+        <!-- Блок с результатами поиска -->
+        <LinearLayout
+            android:id="@+id/search_result_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:padding="16dp">
+
+            <TextView
+                android:id="@+id/search_result_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textColor="@android:color/white"
+                android:gravity="center"
+                android:padding="8dp"/>
+
+            <Button
+                android:id="@+id/btn_add_searched_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Добавить группу"
+                android:layout_gravity="center"
+                android:background="@drawable/rounded_button"
+                android:textColor="@android:color/white"/>
+        </LinearLayout>
+
+        <!-- Блок с кнопками управления -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Кнопка "Создать" -->
+            <Button
+                android:id="@+id/btn_add_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Создать"
+                android:layout_gravity="end"
+                android:background="@drawable/rounded_button"
+                android:textColor="@android:color/white"/>
+
+            <!-- Кнопка "Группы" -->
+            <Button
+                android:id="@+id/btn_open_groups"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Группы"
+                android:textAllCaps="false"
+                android:textColor="@android:color/white"
+                android:background="@drawable/rounded_button"/>
+
+            <!-- Кнопка "Покинуть группу" (внизу слева) -->
+            <ImageButton
+                android:id="@+id/btn_leave_searched_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/rounded_button"
+                android:src="@drawable/ic_exit_group"
+                android:contentDescription="Покинуть группу"
+                android:visibility="gone" />
         </LinearLayout>
 
         <FrameLayout
             android:id="@+id/content_frame"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-
-            <Button
-                android:id="@+id/btn_open_groups"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="start|center_vertical"
-                android:text="Группы"
-                android:textAllCaps="false"
-                android:textColor="@android:color/white"
-                android:backgroundTint="@color/purple_200"/>
         </FrameLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/search_result_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone"
-        android:padding="8dp">
-
-        <TextView
-            android:id="@+id/search_result_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textColor="@android:color/white"
-            android:gravity="center"
-            android:padding="8dp"/>
-
-        <Button
-            android:id="@+id/btn_add_searched_group"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Добавить группу"
-            android:layout_gravity="center"/>
     </LinearLayout>
 
     <com.google.android.material.navigation.NavigationView

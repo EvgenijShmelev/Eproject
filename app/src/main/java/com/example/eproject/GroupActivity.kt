@@ -64,8 +64,17 @@ class GroupActivity : AppCompatActivity() {
 
         val sendButton: Button = findViewById(R.id.send_button)
         val messageInput: EditText = findViewById(R.id.message_input)
+        val filesButton: Button = findViewById(R.id.btn_files)
 
-        // Если пользователь не участник группы, скрываем поле ввода
+        // Настройка кнопки для работы с файлами (исправленная версия)
+        filesButton.setOnClickListener {
+            startActivity(Intent(this, GroupFilesActivity::class.java).apply {
+                putExtra("GROUP_ID", groupId)
+                putExtra("USER_ID", currentUserId)
+            }) // Добавлена закрывающая скобка для apply
+        }
+
+        // Если пользователь не участник группы, скрываем поле ввода и кнопку файлов
         if (userRole == UserRole.MEMBER || userRole == UserRole.HEAD) {
             sendButton.setOnClickListener {
                 val messageText = messageInput.text.toString()
@@ -93,8 +102,10 @@ class GroupActivity : AppCompatActivity() {
         } else {
             messageInput.visibility = View.GONE
             sendButton.visibility = View.GONE
+            filesButton.visibility = View.GONE
         }
     }
+
 
     private fun getUserRoleInGroup(): UserRole {
         return try {
@@ -120,5 +131,4 @@ class GroupActivity : AppCompatActivity() {
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
-
 }
