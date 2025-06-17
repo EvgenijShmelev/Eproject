@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp"
-    android:background="#000000">
+    android:background="@drawable/background">
 
 
     <TextView
@@ -14,7 +14,7 @@
         android:layout_marginTop="150px"
         android:fontFamily="casual"
         android:text="Авторизоваться"
-        android:textColor="#8863b4"
+        android:textColor="#000000"
         android:textSize="30sp" />
 
     <EditText
@@ -24,9 +24,9 @@
         android:layout_gravity="center"
         android:ems="10"
         android:layout_marginTop="150px"
-        android:textColor="#ffffff"
+        android:textColor="#000000"
         android:hint="Введите логин"
-        android:textColorHint="#808080"/>
+        android:textColorHint="#000000"/>
 
     <EditText
         android:id="@+id/user_pass_auth"
@@ -36,8 +36,8 @@
         android:layout_marginTop="150px"
         android:hint="Введите пароль"
         android:ems="10"
-        android:textColor="#ffffff"
-        android:textColorHint="#808080"
+        android:textColor="#000000"
+        android:textColorHint="#000000"
         android:inputType="textPassword"/>
 
     <Button
@@ -46,6 +46,7 @@
         android:layout_height="60dp"
         android:layout_gravity="center"
         android:layout_marginTop="100px"
+        android:textColor="#000000"
         android:text="Войти" />
 
     <TextView
@@ -56,7 +57,7 @@
         android:layout_marginTop="25dp"
         android:fontFamily="casual"
         android:text="Зарегистрироваться"
-        android:textColor="#8863b4"
+        android:textColor="#000000"
         android:textSize="15sp" />
 
 </LinearLayout>

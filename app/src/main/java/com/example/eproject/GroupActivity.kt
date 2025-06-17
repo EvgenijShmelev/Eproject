@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.view.View
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -29,18 +30,29 @@ class GroupActivity : AppCompatActivity() {
             return
         }
         currentUserId = intent.getStringExtra("USER_ID") ?: run {
-            showToast("Ошибка: не указан ID пользователя")
+            showToast("Ошибка авторизации")
             finish()
             return
         }
 
+        val groupName = intent.getStringExtra("GROUP_NAME") ?: "Группа"
+        findViewById<TextView>(R.id.group_name).text = groupName
         try {
             setupViews()
             loadMessages()
         } catch (e: Exception) {
-            showToast("Ошибка при загрузке группы: ${e.message}")
+            showToast("Ошибка при загрузке группы: ${e.localizedMessage}")
             finish()
         }
+    }
+
+    private fun setupRecyclerView() {
+        val recyclerView = findViewById<RecyclerView>(R.id.messages_recycler)
+        recyclerView.layoutManager = LinearLayoutManager(this).apply {
+            stackFromEnd = true
+        }
+        adapter = MessageAdapter(mutableListOf())
+        recyclerView.adapter = adapter
     }
 
     private fun setupViews() {
@@ -62,9 +74,9 @@ class GroupActivity : AppCompatActivity() {
         adapter = MessageAdapter(mutableListOf())
         recyclerView.adapter = adapter
 
-        val sendButton: Button = findViewById(R.id.send_button)
+        val sendButton: ImageButton = findViewById(R.id.send_button)
         val messageInput: EditText = findViewById(R.id.message_input)
-        val filesButton: Button = findViewById(R.id.btn_files)
+        val filesButton: ImageButton = findViewById(R.id.btn_files)
 
         // Настройка кнопки для работы с файлами (исправленная версия)
         filesButton.setOnClickListener {

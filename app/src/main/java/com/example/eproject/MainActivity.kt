@@ -1,5 +1,6 @@
 package com.example.eproject
 
+import android.util.Log
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -52,6 +53,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun sendRegistrationEmail(email: String, login: String) {
+        try {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "message/rfc822"
+                putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+                putExtra(Intent.EXTRA_SUBJECT, "Регистрация в приложении")
+                putExtra(Intent.EXTRA_TEXT, "Поздравляем, $login! Вы успешно зарегистрированы в нашем приложении.")
+            }
+
+            if (intent.resolveActivity(packageManager) != null) {
+                startActivity(Intent.createChooser(intent, "Отправить email"))
+            } else {
+                Toast.makeText(this, "Не найдено приложение для отправки email", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("EMAIL_ERROR", "Ошибка при отправке email", e)
+            Toast.makeText(this, "Ошибка при отправке email", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()

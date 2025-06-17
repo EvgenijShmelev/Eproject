@@ -1,8 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="black">#FF000000</color>
+    <!-- Основные цвета -->
+    <color name="white">#FFFFFF</color>      <!-- Белый фон -->
+    <color name="black">#000000</color>      <!-- Черный текст -->
+    <color name="gray">#808080</color>       <!-- Серый для подсказок -->
+    <color name="mint">#98FF98</color>       <!-- Мятный для акцентов -->
 </resources>

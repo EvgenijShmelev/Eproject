@@ -1,24 +1,18 @@
 pluginManagement {
     repositories {
-        google {
-            content {
-                includeGroupByRegex("com\\.android.*")
-                includeGroupByRegex("com\\.google.*")
-                includeGroupByRegex("androidx.*")
-            }
-        }
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)  // Альтернативный вариант
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }  // Если нужны дополнительные репозитории
     }
 }
-
 rootProject.name = "Eproject"
 include(":app")
- 

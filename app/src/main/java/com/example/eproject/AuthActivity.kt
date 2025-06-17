@@ -1,5 +1,6 @@
 package com.example.eproject
 
+import com.example.eproject.User
 import android.widget.TextView
 import android.content.Intent
 import android.os.Bundle
@@ -36,7 +37,7 @@ class AuthActivity : AppCompatActivity() {
             try {
                 val user = dbHelper.getUser(login, pass)
                 if (user != null) {
-                    // Успешная авторизация
+                    // Успешная авторизация - переход в GeneralMenu
                     startActivity(Intent(this, GeneralMenu::class.java).apply {
                         putExtra("USER_LOGIN", user.login)
                     })

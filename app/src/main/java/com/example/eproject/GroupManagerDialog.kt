@@ -23,24 +23,30 @@ class GroupManageDialog : DialogFragment() {
 
     private var listener: GroupActionListener? = null
     private lateinit var adapter: GroupAdapter
-    private val groups = mutableListOf<String>()
+    private val groupNames = mutableListOf<String>()
+    private val groups = mutableListOf<Group>()
+    private val currentUserId = "current_user_id" // Замените на реальный ID пользователя
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val view = LayoutInflater.from(requireContext())
             .inflate(R.layout.dialog_group_manage, null)
 
-        groups.addAll(listOf("Работа", "Друзья", "Семья"))
+        // Инициализация групп
+        groupNames.addAll(listOf("Работа", "Друзья", "Семья"))
+        updateGroupsList()
 
-        adapter = GroupAdapter { groupName ->
-            listener?.onGroupSelected(groupName)
-            dismiss()
-        }
+        adapter = GroupAdapter(
+            onGroupClick = { group ->
+                listener?.onGroupSelected(group.name)
+                dismiss()
+            },
+            navHeaderView = null
+        )
 
         view.findViewById<RecyclerView>(R.id.groups_recycler).apply {
             layoutManager = LinearLayoutManager(context)
             this.adapter = this@GroupManageDialog.adapter
         }
-        adapter.submitList(groups)
 
         view.findViewById<TextInputEditText>(R.id.search_input).addTextChangedListener(
             object : TextWatcher {
@@ -71,22 +77,50 @@ class GroupManageDialog : DialogFragment() {
             .create()
     }
 
+    private fun updateGroupsList() {
+        groups.clear()
+        groups.addAll(groupNames.map {
+            Group(
+                id = it.hashCode().toString(),
+                name = it,
+                creatorId = currentUserId // Добавлен creatorId
+            )
+        })
+    }
+
     private fun filterGroups(query: String) {
-        val filtered = if (query.isEmpty()) groups else groups.filter { it.contains(query, ignoreCase = true) }
-        adapter.submitList(filtered)
+        val filtered = if (query.isEmpty()) {
+            groupNames
+        } else {
+            groupNames.filter { it.contains(query, ignoreCase = true) }
+        }
+
+        val filteredGroups = filtered.map {
+            Group(
+                id = it.hashCode().toString(),
+                name = it,
+                creatorId = currentUserId // Добавлен creatorId
+            )
+        }
+        adapter.submitList(filteredGroups, emptyList(), emptyList())
     }
 
     private fun addGroup(name: String) {
-        if (!groups.contains(name)) {
-            groups.add(name)
-            adapter.submitList(groups)
+        if (!groupNames.contains(name)) {
+            groupNames.add(name)
+            groups.add(
+                Group(
+                    id = name.hashCode().toString(),
+                    name = name,
+                    creatorId = currentUserId // Добавлен creatorId
+                )
+            )
+            adapter.submitList(groups, emptyList(), emptyList())
             listener?.onGroupAdded(name)
         } else {
             Toast.makeText(context, "Группа уже существует", Toast.LENGTH_SHORT).show()
         }
     }
-
-
 
     fun setGroupActionListener(listener: GroupActionListener) {
         this.listener = listener

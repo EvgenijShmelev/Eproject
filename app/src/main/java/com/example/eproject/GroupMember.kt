@@ -3,7 +3,8 @@ package com.example.eproject
 enum class UserRole {
     HEAD,
     MEMBER,
-    GUEST
+    GUEST,
+    ADMIN
 }
 
 data class GroupMember(

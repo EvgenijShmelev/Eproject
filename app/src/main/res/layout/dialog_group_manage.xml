@@ -20,13 +20,14 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="300dp"
+        android:background="#FFFFFF"
         android:layout_gravity="center"
         android:layout_height="100dp">
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/new_group_input"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColorHint="#FF03DAC5"
+            android:textColorHint="#808080"
             android:hint="Название новой группы"/>
     </com.google.android.material.textfield.TextInputLayout>
 
